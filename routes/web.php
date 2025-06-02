@@ -10,6 +10,7 @@
     use App\Http\Controllers\UserController;
     use App\Http\Controllers\ZonaController;
     use Illuminate\Support\Facades\Route;
+    use Illuminate\Support\Facades\Auth;
 
     Route::get('/', function () {
         return view('auth/login');
@@ -51,7 +52,7 @@
     });
 
     // 🔐 RUTAS SOLO PARA TÉCNICO DE CAMPO (tecnico)
-    Route::middleware(['auth', 'role:tecnico'])->group(function () {
+    Route::middleware(['auth', 'role:Tecnico'])->group(function () {
         Route::get('/mis-ordenes', [OrdenCorteController::class, 'misOrdenes'])->name('ordenes.tecnico');
         Route::post('/ordenes/{id}/evidencia', [EvidenciaController::class, 'storeEvidenciaTecnico'])->name('evidencias.store.tecnico');
     });
@@ -59,7 +60,7 @@
     // Dashboards personalizados
     Route::get('/dashboard-tecnico', function () {
         return view('dashboard-tecnico');
-    })->middleware(['auth', 'role:tecnico'])->name('dashboard.tecnico');
+    })->middleware(['auth', 'role:Tecnico'])->name('dashboard.tecnico');
 
     Route::get('/dashboard-supervisor', function () {
         return view('dashboard-supervisor');

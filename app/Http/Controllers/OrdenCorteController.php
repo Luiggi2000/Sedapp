@@ -10,9 +10,20 @@ use App\Models\User;
 use App\Models\Zona;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class OrdenCorteController extends Controller
 {
+    public function misOrdenes(Request $request): View
+{
+    $user = Auth::user();
+
+    $ordenes = OrdenCorte::where('user_id', $user->id)->paginate();
+
+    return view('orden-corte.mis-ordenes', compact('ordenes'))
+        ->with('i', ($request->input('page', 1) - 1) * $ordenes->perPage());
+}
+
     /**
      * Display a listing of the resource.
      */
