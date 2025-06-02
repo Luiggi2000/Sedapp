@@ -5,7 +5,7 @@
                 {{ __('Users') }}
             </h2>
             <a href="{{ route('users.create') }}" class="btn btn-primary">
-                {{ __('Create New') }}
+                {{ __('Crear Nuevo') }}
             </a>
         </div>
     </x-slot>

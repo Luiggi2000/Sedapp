@@ -5,7 +5,7 @@
                 {{ __('Ordenes de Cortes') }}
             </h2>
             <a href="{{ route('orden-cortes.create') }}" class="btn btn-primary">
-                {{ __('Create New') }}
+                {{ __('Crear') }}
             </a>
         </div>
     </x-slot>

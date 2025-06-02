@@ -5,7 +5,7 @@
                 {{ __('Evidencias') }}
             </h2>
             <a href="{{ route('evidencias.create') }}" class="btn btn-primary">
-                {{ __('Create New') }}
+                {{ __('Crear') }}
             </a>
         </div>
     </x-slot>

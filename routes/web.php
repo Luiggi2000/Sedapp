@@ -53,9 +53,22 @@
 
     // 🔐 RUTAS SOLO PARA TÉCNICO DE CAMPO (tecnico)
     Route::middleware(['auth', 'role:Tecnico'])->group(function () {
-        Route::get('/mis-ordenes', [OrdenCorteController::class, 'misOrdenes'])->name('ordenes.tecnico');
-        Route::post('/ordenes/{id}/evidencia', [EvidenciaController::class, 'storeEvidenciaTecnico'])->name('evidencias.store.tecnico');
-    });
+ // Mostrar la lista de órdenes para el técnico autenticado
+    Route::get('/mis-ordenes', [OrdenCorteController::class, 'misOrdenes'])->name('mis-ordenes.index');
+
+    // Mostrar detalle de una orden específica
+    Route::get('/mis-ordenes/{orden}', [OrdenCorteController::class, 'showMisOrden'])->name('mis-ordenes.showmis-ordenes');
+
+    // Acción para "Tomar Orden" (PATCH)
+    Route::patch('/mis-ordenes/{orden}/tomar', [OrdenCorteController::class, 'tomarOrden'])->name('mis-ordenes.tomarOrden');
+
+    // Actualizar estado de la orden (PATCH)
+    Route::patch('/mis-ordenes/{id}/actualizar-estado', [OrdenCorteController::class, 'actualizarEstado'])->name('mis-ordenes.actualizar-estado');
+
+    // Subir evidencia (POST)
+    Route::post('/mis-ordenes/{id}/subir-evidencia', [OrdenCorteController::class, 'subirEvidencia'])->name('mis-ordenes.subirEvidencia');
+});
+
 
     // Dashboards personalizados
     Route::get('/dashboard-tecnico', function () {

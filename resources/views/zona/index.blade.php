@@ -5,7 +5,7 @@
                 {{ __('Zonas') }}
             </h2>
             <a href="{{ route('zonas.create') }}" class="btn btn-primary">
-                {{ __('Create New') }}
+                {{ __('Crear Nueva') }}
             </a>
         </div>
     </x-slot>

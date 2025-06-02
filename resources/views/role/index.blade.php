@@ -4,9 +4,6 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Roles') }}
             </h2>
-            <a href="{{ route('roles.create') }}" class="btn btn-primary">
-                {{ __('Create New') }}
-            </a>
         </div>
     </x-slot>
 

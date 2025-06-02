@@ -5,7 +5,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+<img src="{{ asset('storage/seda.jpg') }}" alt="Logo SEDACHIMBOTE" class="h-9 w-auto max-w-[100px]">
                     </a>
                 </div>
 
@@ -35,17 +35,26 @@
                     </div>
                 @endif
 
-                <!-- Visible para todos los roles -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('orden-cortes.index')" :active="request()->routeIs('orden-cortes.index')">
-                        {{ __('Ordenes') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('evidencias.index')" :active="request()->routeIs('evidencias.index')">
-                        {{ __('Evidencias') }}
-                    </x-nav-link>
-                </div>
+ <!-- Ordenes - cambia según el rol -->
+<div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+    @if (Auth::user()->rol_id == 2)
+        <x-nav-link :href="route('mis-ordenes.index')" :active="request()->routeIs('mis-ordenes.index')">
+            {{ __('Mis Órdenes') }}
+        </x-nav-link>
+    @else
+        <x-nav-link :href="route('orden-cortes.index')" :active="request()->routeIs('orden-cortes.index')">
+            {{ __('Órdenes') }}
+        </x-nav-link>
+    @endif
+</div>
+               @if (in_array(Auth::user()->rol_id, [1, 3]))
+    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+        <x-nav-link :href="route('evidencias.index')" :active="request()->routeIs('evidencias.index')">
+            {{ __('Evidencias') }}
+        </x-nav-link>
+    </div>
+@endif
+
             </div>
 
             <!-- Dropdown Usuario -->

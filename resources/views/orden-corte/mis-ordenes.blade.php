@@ -5,53 +5,45 @@
         </h2>
     </x-slot>
 
-    <div class="py-6">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-            @if(session('success'))
-                <div class="mb-4 p-4 bg-green-100 text-green-700 rounded">{{ session('success') }}</div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-4 p-4 bg-red-100 text-red-700 rounded">{{ session('error') }}</div>
-            @endif
-
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <table class="min-w-full table-auto border-collapse border border-gray-300">
-                    <thead>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th class="border border-gray-300 px-4 py-2">#</th>
-                            <th class="border border-gray-300 px-4 py-2">Zona</th>
-                            <th class="border border-gray-300 px-4 py-2">Fecha</th>
-                            <th class="border border-gray-300 px-4 py-2">Dirección</th>
-                            <th class="border border-gray-300 px-4 py-2">Estado</th>
-                            <th class="border border-gray-300 px-4 py-2">Acciones</th>
+                            <th class="px-4 py-2">#</th>
+                            <th class="px-4 py-2">Zona</th>
+                            <th class="px-4 py-2">Fecha</th>
+                            <th class="px-4 py-2">Dirección</th>
+                            <th class="px-4 py-2">Estado</th>
+                            <th class="px-4 py-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($ordenes as $index => $orden)
-                            <tr class="text-center">
-                                <td class="border border-gray-300 px-4 py-2">{{ $index + 1 }}</td>
-                                <td class="border border-gray-300 px-4 py-2">{{ $orden->zona->nombre ?? 'N/A' }}</td>
-                                <td class="border border-gray-300 px-4 py-2">{{ $orden->fecha }}</td>
-                                <td class="border border-gray-300 px-4 py-2">{{ $orden->direccion }}</td>
-                                <td class="border border-gray-300 px-4 py-2 capitalize">{{ $orden->estado }}</td>
-                                <td class="border border-gray-300 px-4 py-2">
-
-                                    <a href="{{ route('orden-cortes.show', $orden->id) }}" class="inline-block px-3 py-1 text-white bg-blue-600 rounded hover:bg-blue-700">Ver</a>
-
-                                    @if($orden->estado === 'pendiente')
-                                        <form action="{{ route('orden-cortes.tomar', $orden->id) }}" method="POST" style="display:inline-block;">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="inline-block px-3 py-1 ml-2 text-white bg-yellow-500 rounded hover:bg-yellow-600">Tomar Orden</button>
-                                        </form>
-                                    @endif
-
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                 <tbody class="bg-white divide-y divide-gray-200">
+    @foreach ($ordenes as $index => $orden)
+        <tr @class([
+            'bg-yellow-100 font-semibold' => $orden->id === $ordenTomadaId,
+        ])>
+            <td class="px-4 py-2">{{ $index + 1 }}</td>
+            <td class="px-4 py-2">{{ $orden->zona->nombre ?? 'N/A' }}</td>
+            <td class="px-4 py-2">{{ $orden->fecha }}</td>
+            <td class="px-4 py-2">{{ $orden->direccion }}</td>
+            <td class="px-4 py-2">{{ ucfirst($orden->estado) }}</td>
+<td class="px-4 py-2">
+    <a href="{{ route('mis-ordenes.showmis-ordenes', $orden->id) }}" class="text-blue-600 hover:underline mr-2">Ver</a>
+<form action="{{ route('mis-ordenes.tomarOrden', $orden->id) }}" method="POST" class="inline">
+    @csrf
+    @method('PATCH')  {{-- Esto indica que el método es PATCH --}}
+    <button type="submit" 
+        class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+        onclick="return confirm('¿Estás seguro de tomar esta orden?')">
+        Tomar Orden
+    </button>
+</form>
+</td>
+        </tr>
+    @endforeach
+</tbody>
                 </table>
 
                 <div class="mt-4">
