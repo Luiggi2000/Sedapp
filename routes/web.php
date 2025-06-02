@@ -9,6 +9,8 @@
     use App\Http\Controllers\RoleController;
     use App\Http\Controllers\UserController;
     use App\Http\Controllers\ZonaController;
+        use App\Http\Controllers\DashboardController;
+
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Auth;
 
@@ -16,9 +18,9 @@
         return view('auth/login');
     });
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->middleware(['auth', 'verified'])->name('dashboard');
+ Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
     // Login Técnico
     Route::get('/login-tecnico', [AuthenticatedSessionTecController::class, 'create'])->name('login.tecnico');
