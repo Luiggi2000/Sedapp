@@ -27,6 +27,11 @@
                         <div class="text-sm text-gray-700">{{ $ordenCorte->zona->nombre ?? 'N/A' }}</div>
                     </div>
                     <div>
+    <strong>Dirección:</strong>
+    <div class="text-sm text-gray-700">{{ $ordenCorte->direccion ?? 'N/A' }}</div>
+</div>
+
+                    <div>
                         <strong>Usuario:</strong>
                         <div class="text-sm text-gray-700">{{ $ordenCorte->user->name ?? 'N/A' }}</div>
                     </div>

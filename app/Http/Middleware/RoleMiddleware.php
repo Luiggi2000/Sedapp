@@ -9,19 +9,24 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle($request, Closure $next, ...$roles)
-    {
-        if (!Auth::check()) {
-            return redirect('/login');
-        }
-
-        $user = Auth::user();
-
-        // Suponiendo que tienes una relación o campo 'rol' o 'rol_id'
-        if (!in_array($user->role->name ?? $user->rol_id, $roles)) {
-            abort(403, 'No tienes permiso para acceder a esta ruta.');
-        }
-
-        return $next($request);
+   public function handle($request, Closure $next, ...$roles)
+{
+    if (!Auth::check()) {
+        return redirect('/login');
     }
+
+    $user = Auth::user();
+
+    // Obtener el nombre del rol correctamente
+    $nombreRol = $user->role->name ?? 'Sin Rol';
+
+    if (!in_array($nombreRol, $roles)) {
+        abort(403, "No tienes permiso para acceder a esta ruta. Tu rol es: {$nombreRol}");
+    }
+
+    return $next($request);
+}
+
+
+
 }

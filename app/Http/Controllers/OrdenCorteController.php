@@ -31,8 +31,7 @@ class OrdenCorteController extends Controller
     {
         $ordenCorte = new OrdenCorte();
         $zonas = Zona::all();       // Ajusta el modelo si tienes otro nombre
-        $usuarios = User::all();    // Usuarios registrados
-
+$usuarios = User::where('rol_id', 2)->get(); // Usa el ID real del rol técnico
 
         return view('orden-corte.create', compact('ordenCorte', 'zonas', 'usuarios'));
     }
@@ -40,13 +39,27 @@ class OrdenCorteController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(OrdenCorteRequest $request): RedirectResponse
-    {
-        OrdenCorte::create($request->validated());
+ public function store(Request $request)
+{
+   $request->validate([
+    'zona_id' => 'required',
+    'user_id' => 'required',
+    'fecha' => 'required|date',
+    'direccion' => 'required|string|max:255',
+]);
+    OrdenCorte::create([
+    'zona_id' => $request->zona_id,
+    'user_id' => $request->user_id,
+    'fecha' => $request->fecha,
+    'direccion' => $request->direccion,
+    'estado' => 'pendiente', // En minúscula como en la migración
+]);
 
-        return Redirect::route('orden-cortes.index')
-            ->with('success', 'OrdenCorte created successfully.');
-    }
+
+    return redirect()->route('orden-cortes.index')
+        ->with('success', 'Orden de corte creada correctamente.');
+}
+
 
     /**
      * Display the specified resource.

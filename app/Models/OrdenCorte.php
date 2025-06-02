@@ -25,47 +25,28 @@ use Illuminate\Database\Eloquent\Model;
  */
 class OrdenCorte extends Model
 {
-
     protected $perPage = 20;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = ['zona_id', 'user_id', 'fecha', 'estado'];
+    protected $fillable = ['zona_id', 'user_id', 'fecha', 'estado', 'direccion'];
 
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function zona()
     {
         return $this->belongsTo(\App\Models\Zona::class, 'zona_id', 'id');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function evidencias()
     {
-        return $this->hasMany(\App\Models\Evidencia::class, 'id', 'orden_corte_id');
+        return $this->hasMany(\App\Models\Evidencia::class, 'orden_corte_id', 'id');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function historials()
     {
-        return $this->hasMany(\App\Models\Historial::class, 'id', 'orden_corte_id');
+        return $this->hasMany(\App\Models\Historial::class, 'orden_corte_id', 'id');
     }
-
 }
+

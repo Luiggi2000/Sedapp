@@ -1,72 +1,69 @@
-<?php
+    <?php
 
-use App\Http\Controllers\EvidenciaController;
-use App\Http\Controllers\Auth\AuthenticatedSessionTecController;
-use App\Http\Controllers\EvidenciaTecController;
-use App\Http\Controllers\HistorialController;
-use App\Http\Controllers\OrdenCorteController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RolController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ZonaController;
-use Illuminate\Support\Facades\Route;
+    use App\Http\Controllers\Auth\AuthenticatedSessionTecController;
+    use App\Http\Controllers\EvidenciaController;
+    use App\Http\Controllers\HistorialController;
+    use App\Http\Controllers\OrdenCorteController;
+    use App\Http\Controllers\ProfileController;
+    use App\Http\Controllers\RolController;
+    use App\Http\Controllers\RoleController;
+    use App\Http\Controllers\UserController;
+    use App\Http\Controllers\ZonaController;
+    use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('auth/login');
-});
+    Route::get('/', function () {
+        return view('auth/login');
+    });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Login técnico (GET)
-Route::get('/login-tecnico', [AuthenticatedSessionTecController::class, 'create'])
-    ->name('login.tecnico');
+    // Login Técnico
+    Route::get('/login-tecnico', [AuthenticatedSessionTecController::class, 'create'])->name('login.tecnico');
+    Route::post('/login-tecnico', [AuthenticatedSessionTecController::class, 'store']);
+    Route::post('/logout-tecnico', [AuthenticatedSessionTecController::class, 'destroy'])->name('logout.tecnico');
 
-// Autenticación técnica (POST)
-Route::post('/login-tecnico', [AuthenticatedSessionTecController::class, 'store']);
+    // Login Supervisor
+    Route::get('/login-supervisor', [AuthenticatedSessionTecController::class, 'create'])->name('login.supervisor');
+    Route::post('/login-supervisor', [AuthenticatedSessionTecController::class, 'store']);
+    Route::post('/logout-supervisor', [AuthenticatedSessionTecController::class, 'destroy'])->name('logout.supervisor');
 
-// Logout técnico
-Route::post('/logout-tecnico', [AuthenticatedSessionTecController::class, 'destroy'])
-    ->name('logout.tecnico');
+    // Rutas generales para perfil
+    Route::middleware('auth')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    });
 
-    // Login Supervisor (GET)
-Route::get('/login-supervisor', [AuthenticatedSessionTecController::class, 'create'])
-    ->name('login.supervisor');
+    // 🔐 RUTAS PARA ADMINISTRADOR Y SUPERVISOR (admin, Supervisor)
+    Route::middleware(['auth', 'role:Administrador'])->group(function () {
+        Route::resource('roles', RoleController::class);
+        Route::resource('zonas', ZonaController::class);
+        Route::resource('users', UserController::class);
 
-// Autenticación Supervisor (POST)
-Route::post('/login-supervisor', [AuthenticatedSessionTecController::class, 'store']);
+    });
 
-// Logout Supervisor
-Route::post('/logout-tecnico', [AuthenticatedSessionTecController::class, 'destroy'])
-    ->name('logout.supervisor');
+    // 🔐 RUTAS SOLO PARA SUPERVISOR Y TÉCNICO (Supervisor, tecnico)
+    Route::middleware(['auth', 'role:Supervisor,Administrador'])->group(function () {
+        Route::resource('orden-cortes', OrdenCorteController::class);
+        Route::resource('evidencias', EvidenciaController::class);
+    });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+    // 🔐 RUTAS SOLO PARA TÉCNICO DE CAMPO (tecnico)
+    Route::middleware(['auth', 'role:tecnico'])->group(function () {
+        Route::get('/mis-ordenes', [OrdenCorteController::class, 'misOrdenes'])->name('ordenes.tecnico');
+        Route::post('/ordenes/{id}/evidencia', [EvidenciaController::class, 'storeEvidenciaTecnico'])->name('evidencias.store.tecnico');
+    });
 
-    Route::get('rolesypermisos/roles/create', [RoleController::class, 'create'])->name('roles.create');
-    Route::post('rolesypermisos/roles', [RoleController::class, 'store'])->name('roles.store');
+    // Dashboards personalizados
+    Route::get('/dashboard-tecnico', function () {
+        return view('dashboard-tecnico');
+    })->middleware(['auth', 'role:tecnico'])->name('dashboard.tecnico');
 
-    Route::get('rolesypermisos/roles/{role}/edit', [RoleController::class, 'edit'])->name('role.edit');
-    Route::put('rolesypermisos/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::resource('users', UserController::class);
-});
-Route::resource('roles', RoleController::class);
-Route::resource('zonas', ZonaController::class);
-Route::resource('orden-cortes', OrdenCorteController::class);
-Route::resource('evidencias', EvidenciaController::class);
+    Route::get('/dashboard-supervisor', function () {
+        return view('dashboard-supervisor');
+    })->middleware(['auth', 'role:Supervisor'])->name('dashboard.supervisor');
 
-Route::get('/dashboard-tecnico', function () {
-    return view('dashboard-tecnico'); // crea resources/views/dashboard-tecnico.blade.php
-})->middleware('auth')->name('dashboard.tecnico');
-
-Route::get('/dashboard-supervisor', function () {
-    return view('dashboard-supervisor'); // crea resources/views/dashboard-tecnico.blade.php
-})->middleware('auth')->name('dashboard.supervisor');
-
-
-require __DIR__ . '/auth.php';
+    // Autenticación general
+    require __DIR__ . '/auth.php';

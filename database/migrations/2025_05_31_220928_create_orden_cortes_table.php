@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('zona_id')->constrained('zonas')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('direccion');
             $table->date('fecha');
             $table->enum('estado', ['pendiente', 'en proceso', 'completado', 'no realizado'])->default('pendiente');
             $table->timestamps();
