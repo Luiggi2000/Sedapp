@@ -27,7 +27,7 @@ class Evidencia extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['orden_corte_id', 'imagen', 'observaciones'];
+    protected $fillable = ['orden_corte_id', 'imagen', 'observaciones', 'tipo'];
 
 
     /**
@@ -35,7 +35,7 @@ class Evidencia extends Model
      */
     public function ordenCorte()
     {
-        return $this->belongsTo(\App\Models\OrdenCorte::class, 'orden_corte_id', 'id');
+        return $this->belongsTo(OrdenCorte::class, 'orden_corte_id', 'id');
     }
 
 }

@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orden_cortes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('zona_id')->constrained('zonas')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('direccion');
-            $table->date('fecha');
-            $table->enum('estado', ['pendiente', 'en proceso', 'completado', 'no realizado'])->default('pendiente');
-            $table->timestamps();
-        });
+       Schema::create('orden_cortes', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('zona_id')->constrained('zonas')->onDelete('cascade');
+    $table->foreignId('tecnico_id')->constrained('users')->onDelete('cascade'); // técnico que ejecuta
+    $table->foreignId('afectado_id')->constrained('users')->onDelete('cascade'); // usuario general afectado
+    $table->string('direccion');
+    $table->date('fecha');
+    $table->enum('estado', ['pendiente', 'en proceso', 'completado', 'no realizado'])->default('pendiente');
+    $table->timestamps();
+});
     }
 
     /**

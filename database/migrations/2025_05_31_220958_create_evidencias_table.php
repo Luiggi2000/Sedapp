@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('orden_corte_id')->constrained('orden_cortes')->onDelete('cascade');
             $table->string('imagen');
             $table->string('observaciones')->nullable();
+            $table->string('tipo')->nullable(); // Opcional 
             $table->timestamps();
         });
     }
