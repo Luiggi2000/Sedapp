@@ -12,7 +12,7 @@
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
 
                 <h3 class="text-lg font-semibold mb-4">Información de la Orden</h3>
-                <p><strong>Zona:</strong> {{ $orden->zona->nombre ?? 'N/A' }}</p>
+                <p><strong>Zona:</strong>    {{ $orden->zona->nombre ?? 'N/A' }}</p>
                 <p><strong>Fecha:</strong> {{ $orden->fecha }}</p>
                 <p><strong>Dirección:</strong> {{ $orden->direccion }}</p>
                 <p><strong>Estado:</strong> <span class="capitalize">{{ $orden->estado }}</span></p>
@@ -67,7 +67,7 @@
                     <div class="mb-4 p-4 bg-green-100 text-green-800 rounded">
                         Esta orden está <strong>{{ ucfirst($orden->estado) }}</strong>. No se pueden hacer más cambios.
                     </div>
-                    <a href="{{ route('mis-ordenes.index') }}" class="inline-block px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Volver a Mis Órdenes</a>
+<a href="{{ route('mis-ordenes.show', ['orden' => $orden->id]) }}" class="text-blue-600 hover:underline mr-2">Ver</a>
                 @endif
 
             </div>

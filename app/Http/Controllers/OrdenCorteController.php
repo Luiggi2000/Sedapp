@@ -20,17 +20,17 @@ public function misOrdenes(): View
 {
     $user = auth()->user();
 
-    $ordenes = OrdenCorte::where('user_id', $user->id)
+    $ordenes = OrdenCorte::where('tecnico_id', $user->id)
                 ->orderByRaw("CASE WHEN estado = 'en proceso' THEN 0 ELSE 1 END")
                 ->orderBy('fecha', 'desc')
                 ->paginate(15);
 
-    // Buscar la orden que está en proceso para resaltarla
     $ordenTomada = $ordenes->firstWhere('estado', 'en proceso');
     $ordenTomadaId = $ordenTomada ? $ordenTomada->id : null;
 
-    return view('orden-corte.mis-ordenes', compact('ordenes', 'user', 'ordenTomadaId'));
+    return view('mis-ordenes.index', compact('ordenes', 'user', 'ordenTomadaId'));
 }
+
 
 
     // Mostrar detalle de una orden asignada al técnico autenticado
@@ -38,11 +38,11 @@ public function misOrdenes(): View
     {
         $user = auth()->user();
 
-        if ($orden->user_id !== $user->id) {
-            abort(403, 'No tienes permiso para ver esta orden.');
-        }
+if ($orden->tecnico_id !== $user->id) {
+    abort(403, 'No tienes permiso para ver esta orden.');
+}
 
-        return view('orden-corte.showmis-ordenes', compact('orden'));
+        return view('mis-ordenes.show', compact('orden'));
     }
 
     // Acción para que el técnico tome una orden pendiente sin asignar
@@ -76,7 +76,7 @@ public function misOrdenes(): View
         $orden->estado = $request->estado;
         $orden->save();
 
-        return redirect()->route('mis-ordenes.showmis-ordenes', $orden->id)
+return redirect()->route('mis-ordenes.show', $orden)
             ->with('success', 'Estado actualizado.');
     }
 

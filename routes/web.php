@@ -55,12 +55,11 @@
 
     // 🔐 RUTAS SOLO PARA TÉCNICO DE CAMPO (tecnico)
     Route::middleware(['auth', 'role:Tecnico'])->group(function () {
- // Mostrar la lista de órdenes para el técnico autenticado
-    Route::get('/mis-ordenes', [OrdenCorteController::class, 'misOrdenes'])->name('mis-ordenes.index');
+    // Mostrar la lista de órdenes para el técnico autenticado
 
-    // Mostrar detalle de una orden específica
-    Route::get('/mis-ordenes/{orden}', [OrdenCorteController::class, 'showMisOrden'])->name('mis-ordenes.showmis-ordenes');
+Route::get('/mis-ordenes', [OrdenCorteController::class, 'misOrdenes'])->name('mis-ordenes.index');
 
+Route::get('/mis-ordenes/{orden}', [OrdenCorteController::class, 'showMisOrden'])->name('mis-ordenes.show');
     // Acción para "Tomar Orden" (PATCH)
     Route::patch('/mis-ordenes/{orden}/tomar', [OrdenCorteController::class, 'tomarOrden'])->name('mis-ordenes.tomarOrden');
 
