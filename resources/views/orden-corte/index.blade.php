@@ -31,7 +31,8 @@
                                 <tr>
                                     <th class="px-4 py-2">No</th>
                                     <th class="px-4 py-2">Zona</th>
-                                    <th class="px-4 py-2">Usuario</th>
+                                    <th class="px-4 py-2">Tecnico</th>
+                                    <th class="px-4 py-2">Cliente</th>
                                     <th class="px-4 py-2">Fecha</th>
                                     <th class="px-4 py-2">Estado</th>
                                     <th class="px-4 py-2 text-center">Acciones</th>
@@ -42,7 +43,8 @@
                                     <tr class="border-b">
                                         <td class="px-4 py-2">{{ ++$i }}</td>
                                         <td class="px-4 py-2">{{ $ordenCorte->zona->nombre }}</td>
-                                        <td class="px-4 py-2">{{ $ordenCorte->user->name }}</td>
+                                        <td class="px-4 py-2">{{ $ordenCorte->tecnico?->name ?? 'Sin asignar' }}</td>
+                                        <td class="px-4 py-2">{{ $ordenCorte->afectado?->name ?? 'Sin asignar' }}</td>
                                         <td class="px-4 py-2">{{ $ordenCorte->fecha }}</td>
                                         <td class="px-4 py-2">{{ $ordenCorte->estado }}</td>
                                         <td class="px-4 py-2 text-center">
