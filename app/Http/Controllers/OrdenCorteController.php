@@ -38,10 +38,6 @@ public function misOrdenes(): View
     {
         $user = auth()->user();
 
-if ($orden->tecnico_id !== $user->id) {
-    abort(403, 'No tienes permiso para ver esta orden.');
-}
-
         return view('mis-ordenes.show', compact('orden'));
     }
 
