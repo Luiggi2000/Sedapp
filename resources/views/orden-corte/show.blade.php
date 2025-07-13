@@ -2,53 +2,48 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Show Orden') }}
+                {{ __('Detalle de Orden de Corte') }}
             </h2>
-            <a href="{{ route('orden-cortes.index') }}" class="btn btn-primary">
-                {{ __('Back') }}
+            <a href="{{ route('orden-cortes.index') }}" class="btn btn-secondary">
+                {{ __('Volver') }}
             </a>
         </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-10">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold">{{ __('Detalles de la Orden de Corte') }}</h3>
-                    <a href="{{ route('orden-cortes.index') }}"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        {{ __('Volver') }}
-                    </a>
-                </div>
-
-                <div class="p-6 text-gray-900 space-y-4">
+            <div class="bg-white shadow-md rounded-2xl p-6">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
                     <div>
-                        <strong>Zona:</strong>
-                        <div class="text-sm text-gray-700">{{ $ordenCorte->zona->nombre ?? 'N/A' }}</div>
-                    </div>
-                    <div>
-    <strong>Dirección:</strong>
-    <div class="text-sm text-gray-700">{{ $ordenCorte->direccion ?? 'N/A' }}</div>
-</div>
-
-                    <div>
-                        <strong>Usuario:</strong>
-                        <div class="text-sm text-gray-700">{{ $ordenCorte->user->name ?? 'N/A' }}</div>
+                        <dt class="font-medium text-gray-600">Zona</dt>
+                        <dd>{{ $ordenCorte->zona->nombre ?? 'N/A' }}</dd>
                     </div>
 
                     <div>
-                        <strong>Fecha:</strong>
-                        <div class="text-sm text-gray-700">{{ $ordenCorte->fecha }}</div>
+                        <dt class="font-medium text-gray-600">Dirección</dt>
+                        <dd>{{ $ordenCorte->direccion ?? 'N/A' }}</dd>
                     </div>
+
                     <div>
-                        <strong>Estado:</strong>
-                        <div class="text-sm text-gray-700">{{ $ordenCorte->estado }}</div>
+                        <dt class="font-medium text-gray-600">Técnico Asignado</dt>
+                        <dd>{{ $ordenCorte->user->name ?? 'Sin asignar' }}</dd>
                     </div>
+
                     <div>
-                        <strong>Observaciones:</strong>
-                        <div class="text-sm text-gray-700">{{ $ordenCorte->observaciones }}</div>
+                        <dt class="font-medium text-gray-600">Fecha</dt>
+                        <dd>{{ $ordenCorte->fecha }}</dd>
                     </div>
-                </div>
+
+                    <div>
+                        <dt class="font-medium text-gray-600">Estado</dt>
+                        <dd><span class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">{{ $ordenCorte->estado }}</span></dd>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <dt class="font-medium text-gray-600">Observaciones</dt>
+                        <dd class="whitespace-pre-wrap">{{ $ordenCorte->observaciones ?? '-' }}</dd>
+                    </div>
+                </dl>
             </div>
         </div>
     </div>

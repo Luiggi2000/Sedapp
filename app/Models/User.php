@@ -89,4 +89,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\OrdenCorte::class, 'id', 'user_id');
     }
+
+    public function getRolNombre(): string
+{
+    return optional($this->role)->name ?? 'Sin Rol';
+}
 }
