@@ -48,7 +48,7 @@ class EvidenciaController extends Controller
         ]);
 
         if ($request->hasFile('imagen')) {
-            $imagePath = $request->file('imagen')->store('public');
+            $imagePath = $request->file('imagen')->store('evidencias', 'public');
             // Guarda la imagen en storage/app/public/evidencias
             $validated['imagen'] = $imagePath;  // guarda solo el path relativo
         }
