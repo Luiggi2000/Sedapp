@@ -16,7 +16,7 @@
 
                     <div>
                         <h3 class="text-sm font-medium text-gray-600">Imagen</h3>
-                        <img src="{{ asset('storage/app/public/' . $evidencia->imagen) }}"
+                        <img src="{{ asset('storage/app/private/' . $evidencia->imagen) }}"
                              alt="Imagen de Evidencia"
                              class="mt-2 rounded border max-w-full h-auto max-h-80 object-contain" />
                     </div>
