@@ -2,48 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\OrdenCorte;
 use App\Models\Evidencia;
 use App\Models\Zona;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
-    {
-        // Estadísticas generales
-        $totalOrdenes = OrdenCorte::count();
-        $ordenesCompletadas = OrdenCorte::where('estado', 'completado')->count();
-        $ordenesPendientes = OrdenCorte::where('estado', 'pendiente')->count();
-        $totalEvidencias = Evidencia::count();
+public function index()
+{
+    $totalOrdenes = OrdenCorte::count();
+    $ordenesPendientes = OrdenCorte::where('estado', 'Pendiente')->count();
+    $ordenesEjecutadas = OrdenCorte::where('estado', 'Completada')->count();
 
-        // Órdenes por zona
-        $ordenesPorZona = OrdenCorte::select('zona_id', DB::raw('count(*) as total'))
-            ->with('zona')
-            ->groupBy('zona_id')
-            ->get();
+    $ordenesPorZona = OrdenCorte::selectRaw('zona_id, COUNT(*) as total')
+        ->groupBy('zona_id')->with('zona')->get();
 
-        // Últimas órdenes
-        $ultimasOrdenes = OrdenCorte::with('zona')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+    $ultimosCortes = OrdenCorte::orderByDesc('updated_at')->take(5)->get();
+    $ultimasEvidencias = Evidencia::orderByDesc('created_at')->take(5)->get();
 
-        // Últimas evidencias
-        $ultimasEvidencias = Evidencia::with('ordencorte')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        return view('dashboard', compact(
-            'totalOrdenes',
-            'ordenesCompletadas', 
-            'ordenesPendientes',
-            'totalEvidencias',
-            'ordenesPorZona',
-            'ultimasOrdenes',
-            'ultimasEvidencias'
-        ));
-    }
+    return view('dashboard', compact(
+        'totalOrdenes',
+        'ordenesPendientes',
+        'ordenesEjecutadas',
+        'ordenesPorZona',
+        'ultimosCortes',
+        'ultimasEvidencias'
+    ));
+}
 }

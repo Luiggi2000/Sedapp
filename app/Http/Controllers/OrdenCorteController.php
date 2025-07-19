@@ -38,51 +38,53 @@ public function misOrdenes(): View
     {
         $user = auth()->user();
 
-        return view('mis-ordenes.show', compact('orden'));
-    }
+    return view('mis-ordenes.show', [
+        'orden' => $orden,
+        'estadoFinalSelected' => $orden->estado, // o $orden->estado_final si tienes ese campo
+    ]);    }
 
     // Acción para que el técnico tome una orden pendiente sin asignar
     public function tomarOrden(OrdenCorte $orden): RedirectResponse
-{
-    $user = auth()->user();
-
-    if ($orden->estado !== 'pendiente') {
-        return redirect()->route('mis-ordenes.index')->with('error', 'No puedes tomar esta orden.');
-    }
-
-    $orden->user_id = $user->id;
-    $orden->estado = 'en proceso';
-    $orden->save();
-
-    return redirect()->route('mis-ordenes.index')->with('success', 'Orden tomada correctamente.');
-}
-
-
-    // Actualizar el estado de la orden (completada o no realizada)
-    public function actualizarEstado(Request $request, OrdenCorte $orden): RedirectResponse
     {
-        $request->validate([
-            'estado' => 'required|in:completada,no realizada',
-        ]);
+        $user = auth()->user();
 
-        if ($orden->tecnico_id !== auth()->id()) {
-            return redirect()->route('mis-ordenes.index')->with('error', 'No autorizado.');
+        if ($orden->estado !== 'pendiente') {
+            return redirect()->route('mis-ordenes.index')->with('error', 'No puedes tomar esta orden.');
         }
 
-        $orden->estado = $request->estado;
+        $orden->tecnico_id = $user->id;
+        $orden->estado = 'en proceso';
         $orden->save();
 
-return redirect()->route('mis-ordenes.show', $orden)
-            ->with('success', 'Estado actualizado.');
+        return redirect()->route('mis-ordenes.index')->with('success', 'Orden tomada correctamente.');
     }
 
- public function subirEvidencia(Request $request, $ordenId)
-{
-    $request->validate([
-        'evidencia' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // max 5MB
-        'observaciones' => 'nullable|string|max:1000',
-        'estado_final' => 'nullable|in:completado,no realizado',
-    ]);
+
+        // Actualizar el estado de la orden (completada o no realizada)
+        public function actualizarEstado(Request $request, OrdenCorte $orden): RedirectResponse
+        {
+            $request->validate([
+                'estado' => 'required|in:completada,no realizada',
+            ]);
+
+            if ($orden->tecnico_id !== auth()->id()) {
+                return redirect()->route('mis-ordenes.index')->with('error', 'No autorizado.');
+            }
+
+            $orden->estado = $request->estado;
+            $orden->save();
+
+    return redirect()->route('mis-ordenes.show', $orden)
+                ->with('success', 'Estado actualizado.');
+        }
+
+    public function subirEvidencia(Request $request, $ordenId)
+    {
+        $request->validate([
+            'evidencia' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // max 5MB
+            'observaciones' => 'nullable|string|max:1000',
+            'estado_final' => 'nullable|in:completado,no realizado',
+        ]);
 
     $orden = OrdenCorte::findOrFail($ordenId);
 
@@ -121,26 +123,30 @@ return redirect()->route('mis-ordenes.show', $orden)
         $ordenCorte = new OrdenCorte();
         $zonas = Zona::all();
         $usuarios = User::where('rol_id', 2)->get(); // Ajustar ID de rol según sistema
+        $clientes = User::where('rol_id', 4)->get(); // Ajustar ID de rol según sistema
 
-        return view('orden-corte.create', compact('ordenCorte', 'zonas', 'usuarios'));
+        return view('orden-corte.create', compact('ordenCorte', 'zonas', 'usuarios','clientes'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'zona_id' => 'required|exists:zonas,id',
-            'user_id' => 'required|exists:users,id',
-            'fecha' => 'required|date',
-            'direccion' => 'required|string|max:255',
-        ]);
+  $request->validate([
+    'zona_id' => 'required|exists:zonas,id',
+    'afectado_id' => 'required|exists:users,id',
+    'tecnico_id' => 'nullable|exists:users,id',
+    'fecha' => 'required|date',
+    'direccion' => 'required|string|max:255',
+]);
 
-        OrdenCorte::create([
-            'zona_id' => $request->zona_id,
-            'user_id' => $request->user_id,
-            'fecha' => $request->fecha,
-            'direccion' => $request->direccion,
-            'estado' => 'pendiente',
-        ]);
+OrdenCorte::create([
+    'zona_id' => $request->zona_id,
+    'afectado_id' => $request->afectado_id,
+    'tecnico_id' => $request->tecnico_id,
+    'fecha' => $request->fecha,
+    'direccion' => $request->direccion,
+    'estado' => 'pendiente',
+]);
+
 
         return redirect()->route('orden-cortes.index')->with('success', 'Orden de corte creada correctamente.');
     }
@@ -159,20 +165,20 @@ return redirect()->route('mis-ordenes.show', $orden)
         $ordenCorte = OrdenCorte::findOrFail($id);
         $zonas = Zona::all();
         $usuarios = User::all();
-
-        return view('orden-corte.edit', compact('ordenCorte', 'zonas', 'usuarios'));
+       $usuarios = User::where('rol_id', 2)->get(); // Ajustar ID de rol según sistema
+        $clientes = User::where('rol_id', 4)->get(); // Ajustar ID de rol según sistema
+        return view('orden-corte.edit', compact('ordenCorte', 'zonas', 'usuarios','clientes'));
     }
 
     public function update(Request $request, OrdenCorte $ordenCorte): RedirectResponse
     {
-        $request->validate([
-            'zona_id' => 'required|exists:zonas,id',
-            'user_id' => 'required|exists:users,id',
-            'fecha' => 'required|date',
-            'direccion' => 'required|string|max:255',
-            'estado' => 'required|string',
-        ]);
-
+  $request->validate([
+    'zona_id' => 'required|exists:zonas,id',
+    'afectado_id' => 'required|exists:users,id',
+    'tecnico_id' => 'nullable|exists:users,id',
+    'fecha' => 'required|date',
+    'direccion' => 'required|string|max:255',
+]);
         $ordenCorte->update($request->all());
 
         return redirect()->route('orden-cortes.index')->with('success', 'Orden actualizada correctamente.');
