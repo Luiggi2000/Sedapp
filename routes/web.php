@@ -23,6 +23,8 @@
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+            Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('export.dashboard.data');
+
     // Login Técnico
     Route::get('/login-tecnico', [AuthenticatedSessionTecController::class, 'create'])->name('login.tecnico');
     Route::post('/login-tecnico', [AuthenticatedSessionTecController::class, 'store']);
@@ -44,7 +46,7 @@
     Route::middleware(['auth', 'role:Administrador'])->group(function () {
         Route::resource('roles', RoleController::class);
         Route::resource('zonas', ZonaController::class);
-        Route::resource('users', UserController::class);
+        Route::resource('usuarios', UserController::class);
 
     });
 
