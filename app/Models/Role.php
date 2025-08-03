@@ -13,14 +13,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property $created_at
  * @property $updated_at
  *
- * @property ModelHasRole[] $modelHasRoles
- * @property RoleHasPermission[] $roleHasPermissions
+ * @property User[] $users
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
 class Role extends Model
 {
-
     protected $perPage = 20;
 
     /**
@@ -30,21 +28,11 @@ class Role extends Model
      */
     protected $fillable = ['name', 'guard_name'];
 
-
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function modelHasRoles()
+    public function users()
     {
-        return $this->hasMany(\App\Models\ModelHasRole::class, 'id', 'role_id');
+        return $this->hasMany(User::class, 'rol_id');
     }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function roleHasPermissions()
-    {
-        return $this->hasMany(\App\Models\RoleHasPermission::class, 'id', 'role_id');
-    }
-
 }

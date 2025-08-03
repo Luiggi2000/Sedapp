@@ -3,82 +3,99 @@
 namespace App\Http\Controllers;
 
 use App\Models\Zona;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\ZonaRequest;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Validator;
 
 class ZonaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request): View
+    public function index()
     {
-        $zonas = Zona::paginate();
-
-        return view('zona.index', compact('zonas'))
-            ->with('i', ($request->input('page', 1) - 1) * $zonas->perPage());
+        $zonas = Zona::withCount('ordenCortes')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
+        return view('zonas.index', compact('zonas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    public function create()
     {
-        $zona = new Zona();
-
-        return view('zona.create', compact('zona'));
+        return view('zonas.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(ZonaRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        Zona::create($request->validated());
+        $validator = Validator::make($request->all(), [
+            'nombre' => 'required|string|max:255|unique:zonas,nombre',
+            'descripcion' => 'nullable|string|max:500'
+        ]);
 
-        return Redirect::route('zonas.index')
-            ->with('success', 'Zona created successfully.');
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $zona = Zona::create($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Zona creada exitosamente',
+            'zona' => $zona
+        ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    public function show(Zona $zona)
     {
-        $zona = Zona::find($id);
-
-        return view('zona.show', compact('zona'));
+        $zona->load('ordenCortes.tecnico', 'ordenCortes.afectado');
+        return view('zonas.show', compact('zona'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    public function edit(Zona $zona)
     {
-        $zona = Zona::find($id);
-
-        return view('zona.edit', compact('zona'));
+        return view('zonas.edit', compact('zona'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(ZonaRequest $request, Zona $zona): RedirectResponse
+    public function update(Request $request, Zona $zona)
     {
-        $zona->update($request->validated());
+        $validator = Validator::make($request->all(), [
+            'nombre' => 'required|string|max:255|unique:zonas,nombre,' . $zona->id,
+            'descripcion' => 'nullable|string|max:500'
+        ]);
 
-        return Redirect::route('zonas.index')
-            ->with('success', 'Zona updated successfully');
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $zona->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Zona actualizada exitosamente',
+            'zona' => $zona
+        ]);
     }
 
-    public function destroy($id): RedirectResponse
+    public function destroy(Zona $zona)
     {
-        Zona::find($id)->delete();
+        // Verificar si tiene órdenes asociadas
+        if ($zona->ordenCortes()->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede eliminar la zona porque tiene órdenes asociadas'
+            ], 422);
+        }
 
-        return Redirect::route('zonas.index')
-            ->with('success', 'Zona deleted successfully');
+        $zona->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Zona eliminada exitosamente'
+        ]);
     }
 }

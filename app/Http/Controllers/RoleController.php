@@ -3,85 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\RoleRequest;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
 
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request): View
+    public function index()
     {
-        $roles = Role::paginate();
-
-        return view('role.index', compact('roles'))
-            ->with('i', ($request->input('page', 1) - 1) * $roles->perPage());
+        $roles = Role::paginate(10);
+        return view('roles.index', compact('roles'));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    
+    public function store(Request $request)
     {
-        $role = new Role();
+        $request->validate([
+            'name' => 'required|string|max:255|unique:roles',
+            'guard_name' => 'required|string|max:255',
+        ]);
 
-        return view('role.create', compact('role'));
+        Role::create($request->all());
+
+        return redirect()->route('roles.index')->with('success', 'Rol creado exitosamente.');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(RoleRequest $request): RedirectResponse
-{
-    Role::create([
-        'name' => $request->validated()['name'],
-        'guard_name' => 'web', // Valor por defecto
-    ]);
-
-    return Redirect::route('roles.index')
-        ->with('success', 'Role created successfully.');
-}
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    
+    public function update(Request $request, Role $role)
     {
-        $role = Role::find($id);
+        $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'guard_name' => 'required|string|max:255',
+        ]);
 
-        return view('role.show', compact('role'));
+        $role->update($request->all());
+
+        return redirect()->route('roles.index')->with('success', 'Rol actualizado exitosamente.');
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    
+    public function destroy(Role $role)
     {
-        $role = Role::find($id);
-
-        return view('role.edit', compact('role'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(RoleRequest $request, Role $role): RedirectResponse
-    {
-        $role->update($request->validated());
-
-        return Redirect::route('roles.index')
-            ->with('success', 'Role updated successfully');
-    }
-
-    public function destroy($id): RedirectResponse
-    {
-        Role::find($id)->delete();
-
-        return Redirect::route('roles.index')
-            ->with('success', 'Role deleted successfully');
+        $role->delete();
+        return redirect()->route('roles.index')->with('success', 'Rol eliminado exitosamente.');
     }
 }

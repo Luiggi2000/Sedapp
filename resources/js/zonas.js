@@ -1,284 +1,145 @@
-// This file is for zones-specific JavaScript, using Alpine.js for interactivity.
-\
-document.addEventListener('alpine:init\', () => \{
-    Alpine.data('zoneManagement', () => (\
-{
-  // Initial data passed from Laravel Blade
-  // Make sure these match the variable names in your Blade view\
-  allZonas: @json($zones)
-  ,\
-        totalZonas:
-  @json($totalZonas)
-  ,\
-        totalOrdenes:
-  @json($totalOrdenes)
-  ,\
-        promedioOrdenes:
-  @json($promedioOrdenes)
-  ,
+// Zonas Alpine.js component
+document.addEventListener("alpine:init", () => {
+  window.Alpine = window.Alpine || {}
+  const Alpine = window.Alpine
 
-        searchTerm: '',
-        filteredZonas: [],
-        currentPage: 1,
-        itemsPerPage: 5,
-        isCreateModalOpen: false,
-        isEditModalOpen: false,
-        isDeleteModalOpen: false,\
-        newZona: \
-  {
-    nombre:
-    '\', sector: \'\' \},\
-        editZona: \{ id: null, nombre: \'\', sector: \'\' \},
-        deleteZona: null,
+  Alpine.data("zonasData", () => ({
+    zonas: window.zonasServerData || [],
+    filteredZonas: [],
+    searchTerm: "",
+    showModal: false,
+    showDeleteModal: false,
+    editingZona: false,
+    zoneToDelete: null,
+    form: {
+      nombre: "",
+      descripcion: "",
+    },
+    selectedZona: null,
 
-        init() \
-    this.filterZonas()
-    window.addActivity("accedió a la gestión de zonas")
-    \
-        \
-    ,\
+    init() {
+      this.filterZonas()
+    },
 
-        filterZonas() \
-    \
-            this.filteredZonas = this.allZonas.filter(zona => \
-    {
-      \
-      const lowerSearchTerm = this.searchTerm.toLowerCase()
-      return zona.nombre.toLowerCase().includes(lowerSearchTerm) ||
-                       zona.sector.toLowerCase().includes(lowerSearchTerm);
-      \
-            \
-    }
-    )
-      this.currentPage = 1 // Reset to first page on filter\
-      \
-    ,\
+    filterZonas() {
+      this.filteredZonas = this.zonas.filter((zona) => {
+        const matchesSearch =
+          zona.nombre.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+          (zona.descripcion && zona.descripcion.toLowerCase().includes(this.searchTerm.toLowerCase()))
+        return matchesSearch
+      })
+    },
 
-        get totalPages() \
-    return Math.ceil(this.filteredZonas.length / this.itemsPerPage);
-    \
-        \
-    ,\
+    openCreateModal() {
+      this.form = { nombre: "", descripcion: "" }
+      this.editingZona = false
+      this.selectedZona = null
+      this.showModal = true
+      this.$nextTick(() => {
+        document.querySelector('input[x-model="form.nombre"]')?.focus()
+      })
+    },
 
-        get currentZonas() \
-    {
-      const start = (this.currentPage - 1) * this.itemsPerPage
-      const end = start + this.itemsPerPage
-      return this.filteredZonas.slice(start, end);
-      \
-        \
-    }
-    ,\
+    openEditModal(zona) {
+      this.form = { ...zona }
+      this.editingZona = true
+      this.selectedZona = zona
+      this.showModal = true
+      this.$nextTick(() => {
+        document.querySelector('input[x-model="form.nombre"]')?.focus()
+      })
+    },
 
-        get startEntry() \
-    if (this.filteredZonas.length === 0) return 0;
-    return (this.currentPage - 1) * this.itemsPerPage + 1;
-    \
-        \
-    ,\
+    closeModal() {
+      this.showModal = false
+      this.editingZona = false
+      this.selectedZona = null
+      this.form = { nombre: "", descripcion: "" }
+    },
 
-        get endEntry() \
-    {
-      const end = this.currentPage * this.itemsPerPage
-      return Math.min(end, this.filteredZonas.length);
-      \
-        \
-    }
-    ,\
-
-        goToPage(page) \
-    this.currentPage = page
-    window.addActivity(`navegó a la página $\{page\} de zonas`)
-    \
-    ,
-
-        nextPage() \
-    if (this.currentPage < this.totalPages)
-    \
-    this.currentPage++
-    window.addActivity(`avanzó a la página $\{this.currentPage\} de zonas`)
-    \
-    \
-    ,
-
-        previousPage() \
-    if (this.currentPage > 1)
-    \
-    this.currentPage--
-    window.addActivity(`retrocedió a la página $\{this.currentPage\} de zonas`)
-    \
-    \
-    ,
-
-        openCreateModal() \
-    this.newZona = \
-    nombre: "", sector
-    : '' \
-    this.isCreateModalOpen = true
-    window.addActivity("abrió modal de creación de zona")
-    \
-    ,
-
-        async createZona() \
-    try
-    \
-    {
-      const response = await fetch('/zonas', \{
-                    method: 'POST',
-                    headers: \{
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    \},
-                    body: JSON.stringify(this.newZona)
-                \})
-
-      if (!response.ok)
-      \
-      {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Error al crear la zona.")
-        \
+    async submitForm() {
+      if (!this.form.nombre.trim()) {
+        alert("El nombre de la zona es requerido.")
+        return
       }
 
-      const data = await response.json()
-      const newId = this.allZonas.length > 0 ? Math.max(...this.allZonas.map((z) => z.id)) + 1 : 1
-      const today = new Date().toISOString().split("T")[0]
-      this.allZonas.push(\{
-                    id: newId,
-                    nombre: this.newZona.nombre,
-                    sector: this.newZona.sector,
-                    ordenesActivas: 0, // New zones start with 0 active orders
-                    fechaCreacion: today
-                \})
-      this.totalZonas = this.allZonas.length // Update total count
-      this.filterZonas() // Re-filter and update pagination
-      this.isCreateModalOpen = false
-      window.addActivity(`creó la zona: $\{this.newZona.nombre\}`)
-      alert("Zona creada exitosamente!")
-      \
-    }
-    catch (error) \
-    console.error("Error creating zone:", error)
-    alert("Error al crear la zona: " + error.message)
-    \
-    \
-    ,
+      try {
+        const method = this.editingZona ? "PUT" : "POST"
+        const url = this.editingZona ? `/zonas/${this.selectedZona.id}` : "/zonas"
 
-        openEditModal(zona) \
-    this.editZona = \
-    ...zona \
-    this.isEditModalOpen = true
-    window.addActivity(`abrió modal de edición para zona: $\{zona.nombre\}`)
-    \
-    ,
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+          },
+          body: JSON.stringify(this.form),
+        })
 
-        async saveEditZona() \
-    try
-    \
-    {
-      const response = await fetch(`/zonas/$\{this.editZona.id\}`, \{
-                    method: 'PUT',
-                    headers: \{
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    \},
-                    body: JSON.stringify(this.editZona)
-                \})
+        const data = await response.json()
 
-      if (!response.ok)
-      \
-      {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Error al actualizar la zona.")
-        \
+        if (response.ok) {
+          if (this.editingZona) {
+            const index = this.zonas.findIndex((z) => z.id === this.selectedZona.id)
+            if (index !== -1) {
+              this.zonas[index] = { ...this.form, id: this.selectedZona.id, created_at: this.selectedZona.created_at }
+            }
+            window.addActivity(`editó zona ${this.form.nombre}`)
+          } else {
+            const newId = Math.max(...this.zonas.map((z) => z.id), 0) + 1
+            const newZona = {
+              ...this.form,
+              id: newId,
+              created_at: new Date().toISOString(),
+              orden_cortes_count: 0,
+            }
+            this.zonas.push(newZona)
+            window.addActivity(`creó zona ${this.form.nombre}`)
+          }
+          this.filterZonas()
+          this.closeModal()
+          alert(data.message || "Zona guardada exitosamente")
+        } else {
+          alert("Error al guardar zona: " + (data.message || "Error desconocido"))
+        }
+      } catch (error) {
+        console.error("Error:", error)
+        alert("Error de red o servidor.")
       }
+    },
 
-      const data = await response.json()
-      const index = this.allZonas.findIndex((z) => z.id === this.editZona.id)
-      if (index !== -1)
-      \
-      this.allZonas[index] = \
-      ...this.editZona \
-      \
-      this.filterZonas() // Re-filter and update pagination
-      this.isEditModalOpen = false
-      window.addActivity(`guardó cambios para zona: $\{this.editZona.nombre\}`)
-      alert("Zona actualizada exitosamente!")
-      \
-    }
-    catch (error) \
-    console.error("Error updating zone:", error)
-    alert("Error al actualizar la zona: " + error.message)
-    \
-    \
-    ,
+    confirmDelete(zona) {
+      this.zoneToDelete = zona
+      this.showDeleteModal = true
+    },
 
-        openDeleteModal(zona) \
-    this.deleteZona = zona
-    this.isDeleteModalOpen = true
-    window.addActivity(`abrió modal de eliminación para zona: $\{zona.nombre\}`)
-    \
-    ,
+    async deleteZone() {
+      if (!this.zoneToDelete) return
 
-        async confirmDeleteZona() \
-    try
-    \
-    {
-      const response = await fetch(`/zonas/$\{this.deleteZona.id\}`, \{
-                    method: 'DELETE',
-                    headers: \{
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    \}
-                \})
+      try {
+        const response = await fetch(`/zonas/${this.zoneToDelete.id}`, {
+          method: "DELETE",
+          headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+          },
+        })
 
-      if (!response.ok)
-      \
-      {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Error al eliminar la zona.")
-        \
+        const data = await response.json()
+
+        if (response.ok) {
+          this.zonas = this.zonas.filter((zona) => zona.id !== this.zoneToDelete.id)
+          window.addActivity(`eliminó zona ${this.zoneToDelete.nombre}`)
+          this.filterZonas()
+          this.showDeleteModal = false
+          this.zoneToDelete = null
+          alert(data.message || "Zona eliminada exitosamente")
+        } else {
+          alert("Error al eliminar zona: " + (data.message || "Error desconocido"))
+        }
+      } catch (error) {
+        console.error("Error:", error)
+        alert("Error de red o servidor.")
       }
-
-      const data = await response.json()
-      this.allZonas = this.allZonas.filter((zona) => zona.id !== this.deleteZona.id)
-      this.totalZonas = this.allZonas.length // Update total count
-      this.filterZonas() // Re-filter and update pagination
-      this.isDeleteModalOpen = false
-      window.addActivity(`eliminó la zona: $\{this.deleteZona.nombre\}`)
-      alert("Zona eliminada exitosamente!")
-      this.deleteZona = null
-      \
-    }
-    catch (error) \
-    console.error("Error deleting zone:", error)
-    alert("Error al eliminar la zona: " + error.message)
-    \
-    \
-    ,
-
-        exportZonas() \
-    {
-      let csvContent = "data:text/csv;charset=utf-8,"
-      csvContent += "Nombre,Sector,Ordenes Activas,Fecha Creacion\n" // CSV Header
-
-      this.filteredZonas.forEach(zona => \{
-                const row = `"$\{zona.nombre\}","$\{zona.sector\}",$\{zona.ordenesActivas\},"$\{zona.fechaCreacion\}"`;
-      csvContent += row + "\n"
-      \
-    }
-    )
-
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", "zonas.csv")
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.addActivity("exportó la lista de zonas a CSV")
-    \
-  }
-  \
-}
-))
-\})
+    },
+  }))
+})

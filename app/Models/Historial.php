@@ -21,7 +21,6 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Historial extends Model
 {
-    
     protected $perPage = 20;
 
     /**
@@ -31,21 +30,19 @@ class Historial extends Model
      */
     protected $fillable = ['orden_corte_id', 'user_id', 'observaciones'];
 
-
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function ordenCorte()
     {
-        return $this->belongsTo(\App\Models\OrdenCorte::class, 'orden_corte_id', 'id');
+        return $this->belongsTo(OrdenCorte::class, 'orden_corte_id');
     }
-    
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id');
     }
-    
 }

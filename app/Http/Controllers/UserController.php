@@ -3,85 +3,75 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use App\Http\Requests\UserRequest;
 use App\Models\Role;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request): View
+    public function index()
     {
-        $users = User::paginate();
-
-        return view('user.index', compact('users'))
-            ->with('i', ($request->input('page', 1) - 1) * $users->perPage());
+        $usuarios = User::with('role')->paginate(10);
+        $roles = Role::all();
+        
+        return view('usuarios.index', compact('usuarios', 'roles'));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    
+    public function store(Request $request)
     {
-        $user = new User();
-         $roles = Role::all();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'telefono' => 'nullable|string|max:20',
+            'rol_id' => 'required|exists:roles,id',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
 
-        return view('user.create', compact('user','roles'));
+        User::create([
+            'name' => $request->name,
+            'apellido' => $request->apellido,
+            'email' => $request->email,
+            'telefono' => $request->telefono,
+            'rol_id' => $request->rol_id,
+            'password' => Hash::make($request->password),
+        ]);
+
+        return redirect()->route('usuarios.index')->with('success', 'Usuario creado exitosamente.');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(UserRequest $request): RedirectResponse
+    
+    public function update(Request $request, User $user)
     {
-        User::create($request->validated());
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'apellido' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'telefono' => 'nullable|string|max:20',
+            'rol_id' => 'required|exists:roles,id',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
 
-        return Redirect::route('users.index')
-            ->with('success', 'User created successfully.');
+        $updateData = [
+            'name' => $request->name,
+            'apellido' => $request->apellido,
+            'email' => $request->email,
+            'telefono' => $request->telefono,
+            'rol_id' => $request->rol_id,
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password'] = Hash::make($request->password);
+        }
+
+        $user->update($updateData);
+
+        return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado exitosamente.');
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    
+    public function destroy(User $user)
     {
-        $user = User::find($id);
-
-        return view('user.show', compact('user'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-public function edit($id): View
-{
-    $user = User::findOrFail($id); // Mejor usar findOrFail para evitar errores silenciosos
-    $roles = Role::all(); // Obtener todos los roles
-
-    return view('user.edit', compact('user', 'roles'));
-}
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UserRequest $request, User $user): RedirectResponse
-    {
-        $user->update($request->validated());
-
-        return Redirect::route('users.index')
-            ->with('success', 'User updated successfully');
-    }
-
-    public function destroy($id): RedirectResponse
-    {
-        User::find($id)->delete();
-
-        return Redirect::route('users.index')
-            ->with('success', 'User deleted successfully');
+        $user->delete();
+        return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado exitosamente.');
     }
 }

@@ -2,46 +2,78 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\User;
 use App\Models\OrdenCorte;
-use App\Models\Evidencia;
 use App\Models\Zona;
+use App\Models\Evidencia;
+use App\Models\Role;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-public function index()
-{
-    $totalOrdenes = OrdenCorte::count();
-    $ordenesPendientes = OrdenCorte::where('estado', 'Pendiente')->count();
-    $ordenesEjecutadas = OrdenCorte::where('estado', 'Completada')->count();
-$zoneColors = [
-    1 => 'bg-red-500',
-    2 => 'bg-blue-500',
-    3 => 'bg-green-500',
-    4 => 'bg-yellow-500',
-    5 => 'bg-purple-500',
-    // agrega más según tus zonas
-];
-    $ordenesPorZona = OrdenCorte::selectRaw('zona_id, COUNT(*) as total')
-        ->groupBy('zona_id')->with('zona')->get();
-$ordenesEnProceso = OrdenCorte::where('estado', 'En Proceso')->count();
+    public function index()
+    {
+        // Estadísticas generales
+        $totalUsuarios = User::count();
+        $totalOrdenes = OrdenCorte::count();
+        $totalZonas = Zona::count();
+        $totalEvidencias = Evidencia::count();
+        
+        // Estados de órdenes
+        $ordenesPendientes = OrdenCorte::where('estado', 'pendiente')->count();
+        $ordenesEnProceso = OrdenCorte::where('estado', 'en_proceso')->count();
+        $ordenesCompletadas = OrdenCorte::where('estado', 'completada')->count();
+        $ordenesCanceladas = OrdenCorte::where('estado', 'cancelada')->count();
+        
+        // Técnicos activos (usuarios con rol de técnico)
+        $rolTecnico = Role::where('name', 'tecnico')->first();
+        $tecnicosActivos = $rolTecnico ? User::where('rol_id', $rolTecnico->id)->count() : 0;
+        
+        // Órdenes recientes (últimas 5)
+        $ordenesRecientes = OrdenCorte::with(['zona', 'tecnico', 'afectado'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Evidencias recientes (últimas 4)
+        $evidenciasRecientes = Evidencia::with('ordenCorte')
+            ->orderBy('created_at', 'desc')
+            ->limit(4)
+            ->get();
+        
+        // Estadísticas por zona (zonas con más órdenes)
+        $estadisticasZonas = Zona::withCount('ordenCortes')
+            ->orderBy('orden_cortes_count', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Datos para gráfico de órdenes por zona
+        $ordenesPorZona = Zona::withCount('ordenCortes')
+            ->having('orden_cortes_count', '>', 0)
+            ->orderBy('orden_cortes_count', 'desc')
+            ->get()
+            ->map(function ($zona) {
+                return [
+                    'zona' => $zona->nombre,
+                    'cantidad' => $zona->orden_cortes_count
+                ];
+            });
 
-    $ultimosCortes = OrdenCorte::orderByDesc('updated_at')->take(5)->get();
-    $ultimasEvidencias = Evidencia::orderByDesc('created_at')->take(5)->get();
-    $totalZones = Zona::count();
-
-    return view('dashboard', compact(
-        'totalOrdenes',
-        'ordenesPendientes',
-            'ordenesEnProceso', // esta línea
-        'ordenesEjecutadas',
-        'ordenesPorZona',
-        'ultimosCortes',
-        'ultimasEvidencias',
-            'totalZones', // <-- aquí
-    'zoneColors' // <- aquí
-
-    ));
-}
+        return view('dashboard', compact(
+            'totalUsuarios',
+            'totalOrdenes', 
+            'totalZonas',
+            'totalEvidencias',
+            'ordenesPendientes',
+            'ordenesEnProceso', 
+            'ordenesCompletadas',
+            'ordenesCanceladas',
+            'tecnicosActivos',
+            'ordenesRecientes',
+            'evidenciasRecientes',
+            'estadisticasZonas',
+            'ordenesPorZona'
+        ));
+    }
 }

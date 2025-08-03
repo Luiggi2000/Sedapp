@@ -13,14 +13,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property $created_at
  * @property $updated_at
  *
- * @property Corte[] $cortes
  * @property OrdenCorte[] $ordenCortes
  * @package App
  * @mixin \Illuminate\Database\Eloquent\Builder
  */
 class Zona extends Model
 {
-
     protected $perPage = 20;
 
     /**
@@ -30,21 +28,11 @@ class Zona extends Model
      */
     protected $fillable = ['nombre', 'descripcion'];
 
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function cortes()
-    {
-        return $this->hasMany(\App\Models\OrdenCorte::class, 'id', 'zona_id');
-    }
-
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function ordenCortes()
     {
-        return $this->hasMany(\App\Models\OrdenCorte::class, 'id', 'zona_id');
+        return $this->hasMany(OrdenCorte::class, 'zona_id');
     }
-
 }

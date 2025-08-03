@@ -3,99 +3,136 @@
 namespace App\Http\Controllers;
 
 use App\Models\Evidencia;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use App\Http\Requests\EvidenciaRequest;
 use App\Models\OrdenCorte;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class EvidenciaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request): View
+    public function index()
     {
-        $evidencias = Evidencia::paginate();
-
-        return view('evidencia.index', compact('evidencias'))
-            ->with('i', ($request->input('page', 1) - 1) * $evidencias->perPage());
+        $evidencias = Evidencia::with('ordenCorte.zona')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+        
+        $ordenes = OrdenCorte::with('zona')->get();
+        
+        return view('evidencias.index', compact('evidencias', 'ordenes'));
     }
 
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    public function create()
     {
-        $evidencia = new Evidencia();
-        $ordenCortes = OrdenCorte::all();
-
-        return view('evidencia.create', compact('evidencia', 'ordenCortes'));
+        $ordenes = OrdenCorte::with('zona')->get();
+        return view('evidencias.create', compact('ordenes'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'orden_corte_id' => 'required',
+        $validator = Validator::make($request->all(), [
+            'orden_corte_id' => 'required|exists:orden_cortes,id',
+            'tipo' => 'required|in:antes,durante,despues',
             'imagen' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'observaciones' => 'nullable|string|max:255',
+            'observaciones' => 'required|string|max:500'
         ]);
 
-        if ($request->hasFile('imagen')) {
-            $imagePath = $request->file('imagen')->store('evidencias', 'public');
-            // Guarda la imagen en storage/app/public/evidencias
-            $validated['imagen'] = $imagePath;  // guarda solo el path relativo
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        Evidencia::create($validated);
+        // Subir imagen
+        $imagen = $request->file('imagen');
+        $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+        $rutaImagen = $imagen->storeAs('evidencias', $nombreImagen, 'public');
 
-        return redirect()->route('evidencias.index')->with('success', 'Evidencia creada correctamente.');
+        $evidencia = Evidencia::create([
+            'orden_corte_id' => $request->orden_corte_id,
+            'tipo' => $request->tipo,
+            'imagen' => $rutaImagen,
+            'observaciones' => $request->observaciones
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Evidencia subida exitosamente',
+            'evidencia' => $evidencia->load('ordenCorte')
+        ]);
     }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    public function show(Evidencia $evidencia)
     {
-        $evidencia = Evidencia::find($id);
-
-        return view('evidencia.show', compact('evidencia'));
+        $evidencia->load('ordenCorte.zona');
+        return view('evidencias.show', compact('evidencia'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    public function edit(Evidencia $evidencia)
     {
-        $evidencia = Evidencia::find($id);
-        $ordenCortes = OrdenCorte::all();
-
-        return view('evidencia.edit', compact('evidencia', 'ordenCortes'));
+        $ordenes = OrdenCorte::with('zona')->get();
+        return view('evidencias.edit', compact('evidencia', 'ordenes'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(EvidenciaRequest $request, Evidencia $evidencia): RedirectResponse
+    public function update(Request $request, Evidencia $evidencia)
     {
-        $evidencia->update($request->validated());
+        $validator = Validator::make($request->all(), [
+            'orden_corte_id' => 'required|exists:orden_cortes,id',
+            'tipo' => 'required|in:antes,durante,despues',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'observaciones' => 'required|string|max:500'
+        ]);
 
-        return Redirect::route('evidencias.index')
-            ->with('success', 'Evidencia updated successfully');
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = [
+            'orden_corte_id' => $request->orden_corte_id,
+            'tipo' => $request->tipo,
+            'observaciones' => $request->observaciones
+        ];
+
+        // Si se subió nueva imagen
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior
+            if ($evidencia->imagen && Storage::disk('public')->exists($evidencia->imagen)) {
+                Storage::disk('public')->delete($evidencia->imagen);
+            }
+
+            // Subir nueva imagen
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $rutaImagen = $imagen->storeAs('evidencias', $nombreImagen, 'public');
+            $data['imagen'] = $rutaImagen;
+        }
+
+        $evidencia->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Evidencia actualizada exitosamente',
+            'evidencia' => $evidencia->load('ordenCorte')
+        ]);
     }
 
-    public function destroy($id): RedirectResponse
+    public function destroy(Evidencia $evidencia)
     {
-        Evidencia::find($id)->delete();
+        // Eliminar imagen del storage
+        if ($evidencia->imagen && Storage::disk('public')->exists($evidencia->imagen)) {
+            Storage::disk('public')->delete($evidencia->imagen);
+        }
 
-        return Redirect::route('evidencias.index')
-            ->with('success', 'Evidencia deleted successfully');
+        $evidencia->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Evidencia eliminada exitosamente'
+        ]);
     }
 }
