@@ -5,39 +5,79 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 class MensajeriaController extends Controller
 {
-    private $apiBaseUrl;
+    private $apiUrl;
     private $apiKey;
+    private $timeout;
 
     public function __construct()
     {
-        $this->apiBaseUrl = env('MENSAJERIA_API_URL', 'http://localhost:3001/api');
-        $this->apiKey = env('MENSAJERIA_API_KEY', 'default-key');
+        $this->apiUrl = env('MENSAJERIA_API_URL', 'https://api-mensajeria.sedapp.com');
+        $this->apiKey = env('MENSAJERIA_API_KEY', '');
+        $this->timeout = env('MENSAJERIA_API_TIMEOUT', 30);
     }
 
     public function index()
     {
         try {
             // Obtener conversaciones del microservicio
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Accept' => 'application/json',
-            ])->timeout(10)->get($this->apiBaseUrl . '/conversations');
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->get($this->apiUrl . '/api/conversations');
 
-            $conversaciones = $response->successful() ? $response->json('data') : [];
-            
-            // Obtener usuarios para el selector
-            $usuarios = \App\Models\User::select('id', 'name', 'email')->get();
+            if ($response->successful()) {
+                $conversaciones = $response->json()['data'] ?? [];
+            } else {
+                $conversaciones = [];
+                Log::error('Error al obtener conversaciones: ' . $response->body());
+            }
 
-            return view('mensajeria.index', compact('conversaciones', 'usuarios'));
+            // Obtener estadísticas
+            $statsResponse = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->get($this->apiUrl . '/api/stats');
+
+            $stats = $statsResponse->successful() ? $statsResponse->json()['data'] : [
+                'total_conversations' => 0,
+                'active_conversations' => 0,
+                'total_messages' => 0,
+                'unread_messages' => 0
+            ];
+
+            // Obtener usuarios disponibles para crear conversaciones
+            $availableUsers = User::select('id', 'name', 'email')
+                ->where('id', '!=', auth()->id())
+                ->where('email_verified_at', '!=', null)
+                ->orderBy('name')
+                ->get();
+
+            return view('mensajeria.index', compact('conversaciones', 'stats', 'availableUsers'));
+
         } catch (\Exception $e) {
-            Log::error('Error al obtener conversaciones: ' . $e->getMessage());
+            Log::error('Error en MensajeriaController@index: ' . $e->getMessage());
+            
             return view('mensajeria.index', [
                 'conversaciones' => [],
-                'usuarios' => \App\Models\User::select('id', 'name', 'email')->get(),
-                'error' => 'Error de conexión con el servicio de mensajería'
+                'stats' => [
+                    'total_conversations' => 0,
+                    'active_conversations' => 0,
+                    'total_messages' => 0,
+                    'unread_messages' => 0
+                ],
+                'availableUsers' => User::select('id', 'name', 'email')
+                    ->where('id', '!=', auth()->id())
+                    ->where('email_verified_at', '!=', null)
+                    ->orderBy('name')
+                    ->get()
             ]);
         }
     }
@@ -45,19 +85,32 @@ class MensajeriaController extends Controller
     public function getMessages($conversationId)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Accept' => 'application/json',
-            ])->timeout(10)->get($this->apiBaseUrl . "/conversations/{$conversationId}/messages");
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->get($this->apiUrl . "/api/conversations/{$conversationId}/messages");
 
             if ($response->successful()) {
-                return response()->json($response->json());
+                return response()->json([
+                    'success' => true,
+                    'messages' => $response->json()['data'] ?? []
+                ]);
             }
 
-            return response()->json(['error' => 'Error al obtener mensajes'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener mensajes'
+            ], 500);
+
         } catch (\Exception $e) {
             Log::error('Error al obtener mensajes: ' . $e->getMessage());
-            return response()->json(['error' => 'Error de conexión'], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de conexión con el servicio de mensajería'
+            ], 500);
         }
     }
 
@@ -66,78 +119,155 @@ class MensajeriaController extends Controller
         $request->validate([
             'conversation_id' => 'required|integer',
             'message' => 'required|string|max:1000',
-            'recipient_id' => 'required|integer'
+            'type' => 'in:text,image,file'
         ]);
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Accept' => 'application/json',
-            ])->timeout(10)->post($this->apiBaseUrl . '/messages', [
-                'conversation_id' => $request->conversation_id,
-                'sender_id' => auth()->id(),
-                'recipient_id' => $request->recipient_id,
-                'message' => $request->message,
-                'timestamp' => now()->toISOString()
-            ]);
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->post($this->apiUrl . '/api/messages', [
+                    'conversation_id' => $request->conversation_id,
+                    'message' => $request->message,
+                    'type' => $request->type ?? 'text',
+                    'sender_id' => auth()->id(),
+                    'sender_name' => auth()->user()->name
+                ]);
 
             if ($response->successful()) {
-                return response()->json($response->json());
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Mensaje enviado correctamente',
+                    'data' => $response->json()['data']
+                ]);
             }
 
-            return response()->json(['error' => 'Error al enviar mensaje'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar mensaje'
+            ], 500);
+
         } catch (\Exception $e) {
             Log::error('Error al enviar mensaje: ' . $e->getMessage());
-            return response()->json(['error' => 'Error de conexión'], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de conexión con el servicio de mensajería'
+            ], 500);
         }
     }
 
     public function createConversation(Request $request)
     {
         $request->validate([
-            'participant_ids' => 'required|array|min:1',
-            'participant_ids.*' => 'integer|exists:users,id',
-            'title' => 'required|string|max:255'
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:500',
+            'participants' => 'required|array|min:1',
+            'participants.*' => 'integer|exists:users,id'
         ]);
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Accept' => 'application/json',
-            ])->timeout(10)->post($this->apiBaseUrl . '/conversations', [
-                'title' => $request->title,
-                'created_by' => auth()->id(),
-                'participant_ids' => array_merge($request->participant_ids, [auth()->id()]),
-                'created_at' => now()->toISOString()
-            ]);
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->post($this->apiUrl . '/api/conversations', [
+                    'name' => $request->name,
+                    'description' => $request->description,
+                    'participants' => $request->participants,
+                    'created_by' => auth()->id(),
+                    'created_by_name' => auth()->user()->name
+                ]);
 
             if ($response->successful()) {
-                return response()->json($response->json());
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Conversación creada correctamente',
+                    'conversation' => $response->json()['data']
+                ]);
             }
 
-            return response()->json(['error' => 'Error al crear conversación'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear conversación'
+            ], 500);
+
         } catch (\Exception $e) {
             Log::error('Error al crear conversación: ' . $e->getMessage());
-            return response()->json(['error' => 'Error de conexión'], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de conexión con el servicio de mensajería'
+            ], 500);
         }
     }
 
-    public function deleteConversation($id)
+    public function markAsRead($conversationId)
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Accept' => 'application/json',
-            ])->timeout(10)->delete($this->apiBaseUrl . "/conversations/{$id}");
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->patch($this->apiUrl . "/api/conversations/{$conversationId}/mark-read", [
+                    'user_id' => auth()->id()
+                ]);
 
             if ($response->successful()) {
-                return response()->json(['message' => 'Conversación eliminada exitosamente']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Mensajes marcados como leídos'
+                ]);
             }
 
-            return response()->json(['error' => 'Error al eliminar conversación'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al marcar mensajes como leídos'
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('Error al marcar como leído: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de conexión con el servicio de mensajería'
+            ], 500);
+        }
+    }
+
+    public function deleteConversation($conversationId)
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Accept' => 'application/json',
+                ])
+                ->delete($this->apiUrl . "/api/conversations/{$conversationId}");
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Conversación eliminada correctamente'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar conversación'
+            ], 500);
+
         } catch (\Exception $e) {
             Log::error('Error al eliminar conversación: ' . $e->getMessage());
-            return response()->json(['error' => 'Error de conexión'], 500);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de conexión con el servicio de mensajería'
+            ], 500);
         }
     }
 }
