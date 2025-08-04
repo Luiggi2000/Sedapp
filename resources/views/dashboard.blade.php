@@ -246,9 +246,9 @@
                     <div class="grid grid-cols-2 gap-4">
                         @foreach($evidenciasRecientes as $evidencia)
                             <div class="relative">
-                                <img src="{{ $evidencia->imagen_url }}" alt="Evidencia" class="w-full h-24 object-cover rounded-lg">
+                            <img src="{{ asset('storage/' . $evidencia->imagen) }}" alt="Evidencia" class="w-full h-24 object-cover rounded-lg">
                                 <div class="absolute bottom-2 left-2">
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                    <span class="inline-flex p  x-2 py-1 text-xs font-semibold rounded-full
                                         @if($evidencia->tipo === 'antes') bg-yellow-100 text-yellow-800
                                         @elseif($evidencia->tipo === 'durante') bg-blue-100 text-blue-800
                                         @else bg-green-100 text-green-800 @endif">

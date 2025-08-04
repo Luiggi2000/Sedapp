@@ -27,7 +27,7 @@ class DashboardController extends Controller
         $ordenesCanceladas = OrdenCorte::where('estado', 'cancelada')->count();
         
         // Técnicos activos (usuarios con rol de técnico)
-        $rolTecnico = Role::where('name', 'tecnico')->first();
+        $rolTecnico = Role::where('name', 'Tecnico')->first();
         $tecnicosActivos = $rolTecnico ? User::where('rol_id', $rolTecnico->id)->count() : 0;
         
         // Órdenes recientes (últimas 5)

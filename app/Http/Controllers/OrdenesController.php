@@ -16,7 +16,7 @@ class OrdenesController extends Controller
             ->paginate(10);
             
         $tecnicos = User::whereHas('role', function($query) {
-            $query->where('name', 'tecnico');
+            $query->where('name', 'Tecnico');
         })->get();
         
         $afectados = User::whereHas('role', function($query) {
@@ -29,21 +29,27 @@ class OrdenesController extends Controller
     }
     
     public function store(Request $request)
-    {
-        $request->validate([
-            'zona_id' => 'required|exists:zonas,id',
-            'tecnico_id' => 'required|exists:users,id',
-            'afectado_id' => 'required|exists:users,id',
-            'fecha' => 'required|date',
-            'direccion' => 'required|string|max:255',
-            'estado' => 'required|in:pendiente,en_proceso,completada,cancelada',
-            'observaciones' => 'nullable|string',
-        ]);
+{
+    $validated = $request->validate([
+        'zona_id' => 'required|exists:zonas,id',
+        'tecnico_id' => 'required|exists:users,id',
+        'afectado_id' => 'required|exists:users,id',
+        'fecha' => 'required|date',
+        'direccion' => 'required|string|max:255',
+        'estado' => 'required|in:pendiente,en_proceso,completada,cancelada',
+    ]);
 
-        OrdenCorte::create($request->all());
+    $orden = OrdenCorte::create($validated);
 
-        return redirect()->route('ordenes.index')->with('success', 'Orden creada exitosamente.');
-    }
+    // Carga relaciones para devolverlas al frontend
+    $orden->load('zona', 'tecnico', 'afectado');
+
+    return response()->json([
+        'message' => 'Orden creada exitosamente',
+        'orden' => $orden,
+    ]);
+}
+
     
     public function update(Request $request, OrdenCorte $orden)
     {

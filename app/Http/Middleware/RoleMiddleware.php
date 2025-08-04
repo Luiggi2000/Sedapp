@@ -20,9 +20,7 @@ class RoleMiddleware
     // Obtener el nombre del rol correctamente
     $nombreRol = $user->role->name ?? 'Sin Rol';
 
-    if (!in_array($nombreRol, $roles)) {
-        abort(403, "No tienes permiso para acceder a esta ruta. Tu rol es: {$nombreRol}");
-    }
+
 
     return $next($request);
 }
