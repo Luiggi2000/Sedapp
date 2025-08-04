@@ -115,7 +115,6 @@
         <div class="w-64 bg-white shadow-lg">
             <!-- Logo -->
             <div class="flex items-center justify-center h-16 bg-blue-600">
-                <img src="/sedapp-logo.png" alt="SEDApp Logo" class="h-8 w-8 mr-2">
                 <span class="text-white text-xl font-bold">SEDApp</span>
             </div>
             
