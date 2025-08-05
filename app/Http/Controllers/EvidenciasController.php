@@ -33,6 +33,7 @@ class EvidenciasController extends Controller
                 'message' => 'No tienes permisos para subir evidencias.'
             ], 403);
         }
+        
 
         $request->validate([
             'orden_corte_id' => 'required|exists:orden_cortes,id',
@@ -81,7 +82,7 @@ class EvidenciasController extends Controller
         $user = Auth::user();
         
         // Solo administradores, supervisores o el técnico que subió la evidencia pueden eliminarla
-        if (!in_array($user->role->name, ['administrador', 'supervisor']) && 
+        if (!in_array($user->role->name, ['Administrador', 'Supervisor']) && 
             $evidencia->ordenCorte->tecnico_id !== $user->id) {
             return response()->json([
                 'success' => false,
